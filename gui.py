@@ -1,4 +1,3 @@
-import math
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -41,73 +40,6 @@ def _ascii_art() -> str:
     ║     ███████║╚██████╗██║  ██║██║ ╚███║      ║
     ║     ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚══╝      ║
     ╚══════════════════════════════════════════╝"""
-
-
-class CircuitCanvas(tk.Canvas):
-    """Animated circuit-board pattern in dark green."""
-
-    def __init__(self, parent, **kw) -> None:
-        super().__init__(parent, bg=BG, highlightthickness=0, **kw)
-        self._lines: list[tuple[int, int, int, int]] = []
-        self._dots: list[tuple[int, int]] = []
-        self._phase = 0
-        self._running = True
-        self._generate()
-        self._animate()
-
-    def _generate(self) -> None:
-        import random
-        w, h = 860, 200
-        random.seed(42)
-        # horizontal and vertical circuit traces
-        for _ in range(30):
-            x1 = random.randint(0, w)
-            y = random.randint(0, h)
-            length = random.randint(40, 200)
-            direction = random.choice(["h", "v"])
-            x2 = x1 + (length if direction == "h" else 0)
-            y2 = y + (length if direction == "v" else 0)
-            self._lines.append((x1, y, min(x2, w), min(y2, h)))
-        # component dots
-        for _ in range(80):
-            self._dots.append((random.randint(10, w - 10), random.randint(10, h - 10)))
-
-    def _animate(self) -> None:
-        if not self._running:
-            return
-        self.delete("all")
-        self._phase = (self._phase + 1) % 120
-
-        pulse = math.sin(self._phase / 20) * 0.3 + 0.4  # 0.1 to 0.7
-
-        # circuit traces
-        for i, (x1, y1, x2, y2) in enumerate(self._lines):
-            alpha = 0.08 + 0.06 * math.sin(self._phase / 15 + i * 0.7)
-            r, g, b = 0, int(255 * alpha), 0
-            c = f"#{r:02x}{g:02x}{b:02x}"
-            self.create_line(x1, y1, x2, y2, fill=c, width=1)
-
-        # glowing nodes
-        for i, (x, y) in enumerate(self._dots):
-            alpha = 0.05 + 0.1 * abs(math.sin(self._phase / 25 + i * 0.3))
-            r, g, b = 0, int(255 * alpha), 0
-            c = f"#{r:02x}{g:02x}{b:02x}"
-            self.create_oval(x - 1, y - 1, x + 1, y + 1, fill=c, outline="")
-
-        # pulse effect along border
-        r_border = int(50 * pulse)
-        g_border = int(200 * pulse)
-        b_border = int(100 * pulse)
-        border_color = f"#{r_border:02x}{g_border:02x}{b_border:02x}"
-        w = self.winfo_width()
-        h = self.winfo_height()
-        if w > 1 and h > 1:
-            self.create_rectangle(0, 0, w, h, outline=border_color, width=1)
-
-        self.after(60, self._animate)
-
-    def stop(self) -> None:
-        self._running = False
 
 
 class PortScannerGUI:
@@ -156,7 +88,7 @@ class PortScannerGUI:
         inner = tk.Frame(frame, bg=SURFACE)
         inner.pack(padx=10, pady=7, fill=tk.X)
 
-        prompt = tk.Label(inner, text=prompt_text, bg=SURFACE, fg=GREEN_HIGHLIGHT,
+        prompt = tk.Label(inner, text=f"{prompt_text} >", bg=SURFACE, fg=GREEN_HIGHLIGHT,
                           font=("Consolas", 11, "bold"))
         prompt.pack(side=tk.LEFT, padx=(0, 6))
 
@@ -188,22 +120,14 @@ class PortScannerGUI:
         container.pack(fill=tk.X, padx=12, pady=(12, 0))
         container.pack_propagate(False)
 
-        # Animated circuit background
-        canvas = CircuitCanvas(container, width=876, height=200)
-        canvas.place(x=0, y=0, relwidth=1, relheight=1)
-        self._circuit = canvas
+        # ASCII art banner
+        banner_frame = tk.Frame(container, bg=GREEN_DARK, highlightbackground=GREEN, highlightthickness=1)
+        banner_frame.pack(fill=tk.BOTH, expand=True)
 
-        # ASCII art overlay
         ascii_lines = _ascii_art().strip().split("\n")
-        overlay = tk.Frame(container, bg="")
-        overlay.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
         for line in ascii_lines:
-            tk.Label(overlay, text=line, bg="", fg=GREEN,
+            tk.Label(banner_frame, text=line, bg=GREEN_DARK, fg=GREEN_HIGHLIGHT,
                      font=("Consolas", 16)).pack()
-
-        tk.Label(overlay, text="TCP CONNECT + ICMP DISCOVERY ENGINE",
-                 bg="", fg=GREEN_DIM, font=("Consolas", 9, "bold")).pack(pady=(6, 0))
 
     def _build_input_section(self) -> None:
         frame = tk.Frame(self.root, bg=BG)
@@ -223,22 +147,22 @@ class PortScannerGUI:
         row1.pack(fill=tk.X, pady=(0, 6))
 
         self.target_var = tk.StringVar(value="127.0.0.1")
-        target_entry = self._make_terminal_entry(row1, self.target_var, 26, "[>]")
+        target_entry = self._make_terminal_entry(row1, self.target_var, 26, "Target")
         target_entry.pack(side=tk.LEFT, padx=(0, 8))
 
         self.ports_var = tk.StringVar(value="1-1024")
-        ports_entry = self._make_terminal_entry(row1, self.ports_var, 18, "[>]")
+        ports_entry = self._make_terminal_entry(row1, self.ports_var, 18, "Ports")
         ports_entry.pack(side=tk.LEFT)
 
         row2 = tk.Frame(frame, bg=BG)
         row2.pack(fill=tk.X)
 
         self.threads_var = tk.IntVar(value=100)
-        threads_entry = self._make_terminal_entry(row2, self.threads_var, 6, "[>]")
+        threads_entry = self._make_terminal_entry(row2, self.threads_var, 6, "Threads")
         threads_entry.pack(side=tk.LEFT, padx=(0, 8))
 
         self.timeout_var = tk.DoubleVar(value=1.0)
-        timeout_entry = self._make_terminal_entry(row2, self.timeout_var, 6, "[>]")
+        timeout_entry = self._make_terminal_entry(row2, self.timeout_var, 6, "Timeout")
         timeout_entry.pack(side=tk.LEFT, padx=(0, 20))
 
         self.scan_btn = self._make_btn(row2, "[ SCAN ]", "green", self._start_scan)
@@ -442,5 +366,4 @@ class PortScannerGUI:
         self.root.mainloop()
 
     def destroy(self) -> None:
-        self._circuit.stop()
         self.root.destroy()
