@@ -7,6 +7,7 @@
 3. **模块化优先** — 扫描引擎不依赖 UI，CLI 和 GUI 各自独立调用引擎
 4. **使用 type hints** — 所有函数参数和返回值标注类型
 5. **修改代码后更新所有 md 文件** — 包括 CLAUDE.md 和 memory-bank/*.md，保持文档与代码一致
+6. **每次修改代码后 git commit** — 用简洁的 commit message 描述改动原因，小步提交，每完成一个功能就存档
 
 ## Never（严禁）
 
