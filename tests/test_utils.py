@@ -71,7 +71,7 @@ class TestGetServiceName(unittest.TestCase):
         self.assertEqual(get_service_name(22), "ssh")
 
     def test_unknown(self) -> None:
-        self.assertEqual(get_service_name(65000), "unknown")
+        self.assertEqual(get_service_name(1024), "unknown")
 
 
 if __name__ == "__main__":
