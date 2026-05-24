@@ -14,7 +14,7 @@
 ✅ 所有功能完成，测试全通过
 
 ## 文件清单
-- scanner/engine.py, tcp_scanner.py, icmp_scanner.py, utils.py (0-1023 全知名端口), reporter.py
+- scanner/engine.py, tcp_scanner.py, icmp_scanner.py, utils.py (知名端口 1-1023 全覆盖 1023/1023), reporter.py
 - cli.py — 命令行界面
 - gui.py — GUI 主程序（在 gui.pyw 中无控制台启动）
 - gui.pyw — 双击启动器（无命令行窗口），唯一启动方式

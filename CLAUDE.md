@@ -40,7 +40,7 @@ Scanner Engine (scanner/)       ← Business logic; no print(), no direct UI cou
   ├── engine.py:  ScanResult, HostResult, ScanConfig dataclasses, PortStatus/HostStatus enums
   ├── tcp_scanner.py: TCPScanner — TCP connect() scan, ThreadPoolExecutor, early abort at 3 errors
   ├── icmp_scanner.py: ICMPScanner — ICMP echo via subprocess ping, auto-detect Win/Linux
-  ├── utils.py: parse_ip_target, parse_port_range, SERVICE_NAMES (0-1023 全覆盖 + 注册/高端口), export_json/csv
+  ├── utils.py: parse_ip_target, parse_port_range, SERVICE_NAMES (1023/1023 全网端口 1-1023 全覆盖 + 注册/高端口), export_json/csv
   └── reporter.py: ReportGenerator — generate_html() and generate_markdown() reports
         │
 Python stdlib (socket, threading, ipaddress, tkinter, subprocess, argparse) ← Zero dependencies
