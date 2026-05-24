@@ -19,5 +19,5 @@
 - gui.py — GUI 主程序（在 gui.pyw 中无控制台启动）
 - gui.pyw — 双击启动器（无命令行窗口），唯一启动方式
 - tests/test_utils.py (17 tests), tests/test_scanner.py (8 tests)
-- 课程设计报告.docx（2026-05-24 更新：新增 GUI 黑客风主题说明、300+ 服务端口表、GUI 启动方式、25 测试结果、四周对齐等）
+- 课程设计报告.docx（2026-05-25 更新：1023 个知名端口全覆盖 + GUI 黑客风主题 + 25 测试结果等）
 - gen_report.js — docx-js 报告生成脚本（可重新生成 Word 报告）
