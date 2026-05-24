@@ -203,14 +203,14 @@ class PortScannerGUI:
         columns = ("host", "port", "status", "service")
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings",
                                  height=16, style="Hack.Treeview")
-        self.tree.heading("host", text="HOST", anchor=tk.W)
-        self.tree.heading("port", text="PORT", anchor=tk.W)
-        self.tree.heading("status", text="STATUS", anchor=tk.W)
-        self.tree.heading("service", text="SERVICE", anchor=tk.W)
-        self.tree.column("host", width=200, minwidth=140)
+        self.tree.heading("host", text="HOST", anchor=tk.CENTER)
+        self.tree.heading("port", text="PORT", anchor=tk.CENTER)
+        self.tree.heading("status", text="STATUS", anchor=tk.CENTER)
+        self.tree.heading("service", text="SERVICE", anchor=tk.CENTER)
+        self.tree.column("host", width=200, minwidth=140, anchor=tk.CENTER)
         self.tree.column("port", width=70, minwidth=60, anchor=tk.CENTER)
         self.tree.column("status", width=80, minwidth=70, anchor=tk.CENTER)
-        self.tree.column("service", width=150, minwidth=100)
+        self.tree.column("service", width=150, minwidth=100, anchor=tk.CENTER)
 
         scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -296,10 +296,12 @@ class PortScannerGUI:
         self._scan_thread.start()
 
     def _on_scan_result(self, result) -> None:
+        self._results.append(result)
         if result.status.value in ("open", "up"):
             self._open_count += 1
-        self.root.after(0, self._insert_row, result.host, str(result.port),
-                        result.status.value, result.service)
+            self.root.after(0, self._insert_row, result.host, str(result.port),
+                            result.status.value, result.service)
+        # Only show open ports in the table; closed/filtered are saved for export
 
     def _on_discover_result(self, result) -> None:
         self._results.append(result)
@@ -323,9 +325,11 @@ class PortScannerGUI:
 
     def _scan_done(self) -> None:
         self._set_scanning(False)
-        hosts = len(self._results)
-        self.status_var.set(f"[ DONE ]  {hosts} host(s)  |  {self._open_count} open port(s)")
-        self.stats_var.set(f"{hosts} hosts  ·  {self._open_count} open ports")
+        total = len(self._results)
+        host_set: set[str] = {r.host for r in self._results}
+        hosts = len(host_set)
+        self.status_var.set(f"[ DONE ]  {hosts} host(s)  |  {total} scanned  |  {self._open_count} open")
+        self.stats_var.set(f"{hosts} hosts  ·  {total} scanned  ·  {self._open_count} open")
 
     def _stop(self) -> None:
         self._set_scanning(False)
