@@ -312,7 +312,7 @@ const doc = new Document({
         bullet("混合格式：\"22,80-82,443\" → [22, 80, 81, 82, 443]"),
 
         heading2("3.5 服务名称识别"),
-        p("SERVICE_NAMES 字典内置 300+ 知名端口号到服务名称的映射，覆盖："),
+        p("SERVICE_NAMES 字典内置 1023 个知名端口号（1-1023 全覆盖）到服务名称的映射，覆盖："),
         bullet("知名系统端口（0-1023）：HTTP(80)、HTTPS(443)、SSH(22)、FTP(21)、SMTP(25)、DNS(53)、TELNET(23) 等 100+ 个。"),
         bullet("注册端口（1024-49151）：MySQL(3306)、PostgreSQL(5432)、Redis(6379)、MongoDB(27017)、RDP(3389)、Docker(2375/2376) 等 150+ 个。"),
         bullet("常见高端口：Splunk(9997)、Webmin(10000)、Memcached(11211)、Minecraft(25565) 等 50+ 个。"),
