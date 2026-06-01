@@ -22,7 +22,7 @@ python cli.py scan --target 192.168.1.0/24 --ports 22,80,443,3306 --output repor
 python cli.py discover --network 192.168.1.0/24
 
 # 启动图形界面
-python gui.py
+python gui.pyw
 ```
 
 ## CLI 命令
