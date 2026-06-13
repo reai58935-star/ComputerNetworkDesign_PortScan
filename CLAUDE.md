@@ -11,7 +11,7 @@ A cross-platform port scanner built with Python's standard library for a univers
 python cli.py scan --target 127.0.0.1 --ports 1-1024 --threads 100 --timeout 1.0
 
 # Run host discovery via CLI
-python cli.py discover --target 192.168.1.0/24 --threads 50
+python cli.py discover --network 192.168.1.0/24 --threads 50
 
 # Export scan report (HTML/MD/JSON/CSV)
 python cli.py scan --target 127.0.0.1 --ports 1-1024 --output report.html --format html
@@ -63,3 +63,8 @@ Python stdlib (socket, threading, ipaddress, tkinter, subprocess, argparse) ← 
 
 ## Type Hints
 All functions must include parameter and return type annotations. Dataclasses in `engine.py` define the data contract.
+
+## Course Design Report (gen_report.js)
+- `gen_report.js` — Node.js script using `docx` library to auto-generate `课程设计报告.docx`
+- Requires `npm install docx` before first use, then `node gen_report.js` to regenerate
+- `node_modules/` is gitignored; `package.json` and `package-lock.json` are committed
