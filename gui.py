@@ -53,6 +53,7 @@ class PortScannerGUI:
         self._results: list = []
         self._config: ScanConfig | None = None
         self._open_count = 0
+        self._export_data: list = []  # HostResult list from scan_network/discover_hosts, for export
 
         self._build_styles()
         self._build_banner()
@@ -262,9 +263,9 @@ class PortScannerGUI:
         scanner = TCPScanner(self._config)
 
         def run() -> None:
-            scanner.scan_network(on_result=self._on_scan_result,
-                                 on_progress=self._on_scan_progress)
-            self.root.after(0, self._scan_done)
+            host_results = scanner.scan_network(on_result=self._on_scan_result,
+                                                on_progress=self._on_scan_progress)
+            self.root.after(0, self._scan_done, host_results)
 
         self._scan_thread = threading.Thread(target=run, daemon=True)
         self._scan_thread.start()
@@ -287,10 +288,10 @@ class PortScannerGUI:
                               max_workers=self.threads_var.get())
 
         def run() -> None:
-            scanner.discover_hosts(targets,
-                                   on_result=self._on_discover_result,
-                                   on_progress=self._on_discover_progress)
-            self.root.after(0, self._scan_done)
+            host_results = scanner.discover_hosts(targets,
+                                                  on_result=self._on_discover_result,
+                                                  on_progress=self._on_discover_progress)
+            self.root.after(0, self._scan_done, host_results)
 
         self._scan_thread = threading.Thread(target=run, daemon=True)
         self._scan_thread.start()
@@ -323,8 +324,10 @@ class PortScannerGUI:
         self.progress["maximum"] = total
         self.progress["value"] = done
 
-    def _scan_done(self) -> None:
+    def _scan_done(self, host_results: list | None = None) -> None:
         self._set_scanning(False)
+        if host_results is not None:
+            self._export_data = host_results
         total = len(self._results)
         host_set: set[str] = {r.host for r in self._results}
         hosts = len(host_set)
@@ -336,7 +339,7 @@ class PortScannerGUI:
         self.status_var.set("[ STOPPED ]  Scan terminated by user")
 
     def _export(self) -> None:
-        if not self._config:
+        if not self._config or not self._export_data:
             return
         filepath = filedialog.asksaveasfilename(
             defaultextension=".html",
@@ -345,13 +348,13 @@ class PortScannerGUI:
         if not filepath:
             return
         if filepath.endswith(".json"):
-            export_json(self._results, filepath)
+            export_json(self._export_data, filepath)
         elif filepath.endswith(".csv"):
-            export_csv(self._results, filepath)
+            export_csv(self._export_data, filepath)
         elif filepath.endswith(".md"):
-            ReportGenerator(self._results, self._config).generate_markdown(filepath)
+            ReportGenerator(self._export_data, self._config).generate_markdown(filepath)
         else:
-            ReportGenerator(self._results, self._config).generate_html(filepath)
+            ReportGenerator(self._export_data, self._config).generate_html(filepath)
         self.status_var.set(f"[ EXPORTED ]  {filepath}")
 
     def _set_scanning(self, scanning: bool) -> None:
