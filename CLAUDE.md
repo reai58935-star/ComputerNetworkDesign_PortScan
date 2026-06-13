@@ -67,4 +67,4 @@ All functions must include parameter and return type annotations. Dataclasses in
 ## Course Design Report (gen_report.js)
 - `gen_report.js` — Node.js script using `docx` library to auto-generate `课程设计报告.docx`
 - Requires `npm install docx` before first use, then `node gen_report.js` to regenerate
-- `node_modules/` is gitignored; `package.json` and `package-lock.json` are committed
+- `node_modules/` is gitignored; run `npm install docx` to set up, then `node gen_report.js`
