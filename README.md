@@ -64,8 +64,10 @@ python -m unittest discover tests/ -v
 │   ├── utils.py          # IP/端口解析、服务名、导出
 │   └── reporter.py       # HTML/Markdown 报告生成
 ├── cli.py                # 命令行界面
-├── gui.py                # 图形界面
-├── tests/                # 单元测试
+├── gui.py                # GUI 主程序
+├── gui.pyw               # GUI 双击启动（无命令行窗口）
+├── gen_report.js         # 课程设计报告生成脚本（可选）
+├── tests/                # 单元测试（25 个）
 └── memory-bank/          # 项目文档
 ```
 
