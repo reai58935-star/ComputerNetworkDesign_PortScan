@@ -1,0 +1,3 @@
+抓取横幅TCP connect 成功后，不收 SYN 就断开，而是等着读对方发的第一句话。
+TCP connect 成功后，不收 SYN 就断开，而是等着读对方发的第一句话。
+调用系统 ping     subprocess  Python 启动的下级进程
