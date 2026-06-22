@@ -395,7 +395,58 @@ const doc = new Document({
         // ====== CHAPTER 5 ======
         heading1("五、程序详细设计说明"),
 
-        heading2("5.1 项目结构"),
+        heading2("5.1 程序流程"),
+
+        p([
+          { text: "TCP 端口扫描主流程", font: "SimHei", size: 21, bold: true },
+        ]),
+        new Paragraph({ spacing: { after: 80 }, children: [] }),
+        ...[
+          "用户输入 (CLI / GUI)",
+          "  → parse_ip_target() / parse_port_range()    // 解析 IP 和端口",
+          "  → ScanConfig(targets, ports, timeout, max_workers)",
+          "  → TCPScanner.scan_network()                 // 串行遍历每台主机",
+          "      → scan_host(host)                       // 对单主机并发扫描",
+          "          → ThreadPoolExecutor(max_workers)    // 线程池",
+          "              → scan_port(host, port)          // 单端口 TCP connect",
+          "                  → socket.connect_ex((host, port))",
+          "                      → 返回 0  → PortStatus.OPEN",
+          "                      → 返回非0 → PortStatus.CLOSED",
+          "                      → 超时    → PortStatus.FILTERED",
+          "                      → 异常    → PortStatus.ERROR",
+          "              → 汇总为 HostResult(host, status, open_ports, scan_time)",
+          "  → 扫描完成 → ReportGenerator → 导出 HTML / Markdown / JSON / CSV",
+        ].map(line => new Paragraph({
+          spacing: { after: 30 },
+          indent: { left: 360 },
+          children: [new TextRun({ text: line, font: "Consolas", size: 18 })],
+        })),
+
+        new Paragraph({ spacing: { after: 120 }, children: [] }),
+
+        p([
+          { text: "ICMP 主机发现流程", font: "SimHei", size: 21, bold: true },
+        ]),
+        new Paragraph({ spacing: { after: 80 }, children: [] }),
+        ...[
+          "用户输入 (CLI / GUI)",
+          "  → parse_ip_target()                          // 解析 IP 网段",
+          "  → ICMPScanner.discover_hosts(target_ips)     // 并发探测多台主机",
+          "      → ThreadPoolExecutor(max_workers)        // 线程池",
+          "          → ping(host)                         // 单主机 ping",
+          "              → subprocess.run([\"ping\", ...])  // 调用系统 ping 命令",
+          "                  → returncode == 0  → HostStatus.UP",
+          "                  → returncode != 0  → HostStatus.DOWN",
+          "                  → TimeoutExpired  → HostStatus.DOWN",
+          "              → 汇总为 HostResult(host, status, scan_time)",
+          "  → 探测完成 → 返回 list[HostResult]",
+        ].map(line => new Paragraph({
+          spacing: { after: 30 },
+          indent: { left: 360 },
+          children: [new TextRun({ text: line, font: "Consolas", size: 18 })],
+        })),
+
+        heading2("5.2 项目结构"),
         new Paragraph({ spacing: { after: 80 }, children: [] }),
         ...[
           "ComputerNetworkDesign/",
@@ -420,7 +471,7 @@ const doc = new Document({
           children: [new TextRun({ text: line, font: "Consolas", size: 18 })],
         })),
 
-        heading2("5.2 关键数据结构"),
+        heading2("5.3 关键数据结构"),
         p([
           { text: "ScanResult", font: "Consolas", size: 21, bold: true },
           { text: "（dataclass）：host: str, port: int, status: PortStatus, service: str = \"unknown\", error_message: str = \"\"", font: "Consolas", size: 20 },
@@ -434,13 +485,33 @@ const doc = new Document({
           { text: "（dataclass）：targets: list[str], ports: list[int], timeout: float = 1.0, max_workers: int = 100", font: "Consolas", size: 20 },
         ]),
 
-        heading2("5.3 双回调模式"),
+        heading2("5.4 主要函数说明"),
+        new Paragraph({ spacing: { after: 60 }, children: [] }),
+        new Table({
+          width: { size: 9360, type: WidthType.DXA },
+          columnWidths: [1720, 2720, 4920],
+          rows: [
+            new TableRow({ children: [headerCell("文件", 1720), headerCell("函数", 2720), headerCell("说明", 4920)] }),
+            new TableRow({ children: [codeCell("tcp_scanner.py", 1720), codeCell("scan_port(host, port)", 2720), cell("创建 TCP socket → connect_ex() 连接 → 根据返回值判断 OPEN/CLOSED/FILTERED/ERROR → finally 中 sock.close() 释放资源", 4920)] }),
+            new TableRow({ children: [codeCell("tcp_scanner.py", 1720), codeCell("scan_host(host, on_result)", 2720), cell("ThreadPoolExecutor 并发调用 scan_port()，max_workers 取 min(用户值, 端口数, 500)。连续 3 次 FILTERED/ERROR 提前中止，剩余未扫端口标记为 ERROR。每完成一个端口通过 on_result 回调通知 UI", 4920)] }),
+            new TableRow({ children: [codeCell("tcp_scanner.py", 1720), codeCell("scan_network(on_result, on_progress)", 2720), cell("串行遍历 self.config.targets 中每台主机，逐台调用 scan_host()。每台主机完成后通过 on_progress 回调通知进度", 4920)] }),
+            new TableRow({ children: [codeCell("icmp_scanner.py", 1720), codeCell("ping(host)", 2720), cell("调用 subprocess.run() 执行系统 ping 命令，自动适配 Windows（-n 1 -w ms）和 Linux（-c 1 -W sec）参数。根据 returncode 判断 UP/DOWN", 4920)] }),
+            new TableRow({ children: [codeCell("icmp_scanner.py", 1720), codeCell("discover_hosts(targets, ...)", 2720), cell("ThreadPoolExecutor 并发调用 ping()，每完成一个主机通过 on_result 回调通知。返回 list[HostResult]", 4920)] }),
+            new TableRow({ children: [codeCell("utils.py", 1720), codeCell("parse_ip_target(target)", 2720), cell("解析 IP 字符串，支持单 IP、CIDR 网段（ipaddress.IPv4Network）、IP 范围（拆分→遍历→生成列表）、域名/主机名。非法输入抛出 ValueError", 4920)] }),
+            new TableRow({ children: [codeCell("utils.py", 1720), codeCell("parse_port_range(port_str)", 2720), cell("解析端口字符串，支持单端口、范围（1-65535）、逗号分隔列表、混合格式。非法输入抛出 ValueError", 4920)] }),
+            new TableRow({ children: [codeCell("utils.py", 1720), codeCell("get_service_name(port)", 2720), cell("字典查询 SERVICE_NAMES.get(port, \"unknown\")，返回端口对应的服务名称", 4920)] }),
+            new TableRow({ children: [codeCell("reporter.py", 1720), codeCell("generate_html(path)", 2720), cell("生成自包含 HTML 报告：内联 CSS、Summary 概览表、逐主机开放端口详表。html.escape() 防止 XSS", 4920)] }),
+            new TableRow({ children: [codeCell("reporter.py", 1720), codeCell("generate_markdown(path)", 2720), cell("生成 Markdown 报告：标题层级、竖线表格、纯文本格式", 4920)] }),
+          ],
+        }),
+
+        heading2("5.5 双回调模式"),
         p("扫描器采用回调模式向 UI 层报告进度，保持引擎与 UI 的完全解耦："),
         bullet("on_result(ScanResult)：每完成一个端口扫描时调用，CLI 端 print 输出，GUI 端通过 root.after() 跨线程插入表格行。"),
         bullet("on_progress(done: int, total: int)：每完成一台主机扫描时调用，用于更新进度条。"),
         bullet("GUI 端在 _on_scan_result 中只将 open 状态的结果插入 Treeview，filtered/closed/error 结果仅保存到 _results 列表供导出使用。"),
 
-        heading2("5.4 线程安全设计"),
+        heading2("5.6 线程安全设计"),
         bullet("扫描在后台 daemon 线程 (threading.Thread) 中执行，不阻塞 GUI 主线程。"),
         bullet("所有 UI 更新通过 root.after(0, callback, ...) 调度到主线程执行。"),
         bullet("daemon=True 确保窗口关闭后后台线程自动终止。"),
