@@ -245,7 +245,7 @@ const doc = new Document({
             new TableRow({ children: [cell("ICMP 扫描器", 1800), codeCell("icmp_scanner.py", 2200), cell("ICMPScanner 类：subprocess ping，自动适配 Win/Linux 参数", 5360)] }),
             new TableRow({ children: [cell("工具模块", 1800), codeCell("utils.py", 2200), cell("parse_ip_target/parse_port_range 解析，1023 知名端口全覆盖，export_json/export_csv 导出", 5360)] }),
             new TableRow({ children: [cell("报告生成", 1800), codeCell("reporter.py", 2200), cell("ReportGenerator 类：generate_html（内联 CSS）/ generate_markdown", 5360)] }),
-            new TableRow({ children: [cell("命令行界面", 1800), codeCell("cli.py", 2200), cell("argparse 子命令 scan/discover，参数 --target --ports --threads --timeout --output --format", 5360)] }),
+            new TableRow({ children: [cell("命令行界面", 1800), codeCell("cli.py", 2200), cell("argparse 子命令 scan/discover，scan 参数 --target/--ports，discover 参数 --network，共用 --threads/--timeout/--output/--format", 5360)] }),
             new TableRow({ children: [cell("图形界面", 1800), codeCell("gui.py", 2200), cell("tkinter 黑客风暗色主题，后台 daemon 线程，root.after() 更新，只显示开放端口", 5360)] }),
             new TableRow({ children: [cell("GUI 启动器", 1800), codeCell("gui.pyw", 2200), cell("双击启动，无命令行窗口，唯一启动方式", 5360)] }),
             new TableRow({ children: [cell("测试", 1800), codeCell("tests/", 2200), cell("test_utils.py（17 测试）+ test_scanner.py（8 测试），共 25 个单元测试", 5360)] }),
@@ -253,7 +253,7 @@ const doc = new Document({
         }),
 
         heading2("2.4 数据流"),
-        p("用户输入 (CLI/GUI) → ScanConfig (targets, ports, timeout, max_workers) → TCPScanner / ICMPScanner → on_result 回调 → UI 实时更新表格 → 完成后 ReportGenerator → 导出 HTML/MD/JSON/CSV。"),
+        p("用户输入 (CLI/GUI) → ScanConfig (targets, ports, timeout, max_workers) → TCPScanner；用户输入 (CLI/GUI) → ICMPScanner(timeout, max_workers) → ICMP 主机发现 → on_result 回调 → UI 实时更新 → 完成后 ReportGenerator → 导出。"),
         new Paragraph({ spacing: { after: 80 }, children: [] }),
 
         // ====== CHAPTER 3 ======
@@ -270,6 +270,19 @@ const doc = new Document({
             new TableRow({ children: [codeCell("PortStatus.CLOSED", 2000), cell("端口关闭", 1800), cell("connect_ex() 返回非零（ECONNREFUSED 等）", 5560)] }),
             new TableRow({ children: [codeCell("PortStatus.FILTERED", 2000), cell("被过滤", 1800), cell("socket.timeout 超时", 5560)] }),
             new TableRow({ children: [codeCell("PortStatus.ERROR", 2000), cell("扫描错误", 1800), cell("DNS 解析失败 / OS 错误 / 主机不可达中止", 5560)] }),
+          ],
+        }),
+
+        new Paragraph({ spacing: { after: 60 }, children: [] }),
+        p("主机发现定义了三种主机状态枚举："),
+        new Table({
+          width: { size: 9360, type: WidthType.DXA },
+          columnWidths: [2000, 1800, 5560],
+          rows: [
+            new TableRow({ children: [headerCell("枚举值", 2000), headerCell("含义", 1800), headerCell("判定条件", 5560)] }),
+            new TableRow({ children: [codeCell("HostStatus.UP", 2000), cell("主机在线", 1800), cell("ping returncode == 0（收到 Echo Reply）", 5560)] }),
+            new TableRow({ children: [codeCell("HostStatus.DOWN", 2000), cell("主机离线", 1800), cell("ping returncode != 0 或 subprocess.TimeoutExpired", 5560)] }),
+            new TableRow({ children: [codeCell("HostStatus.UNKNOWN", 2000), cell("状态未知", 1800), cell("ping 命令不存在 (FileNotFoundError) 等异常", 5560)] }),
           ],
         }),
 
@@ -313,9 +326,9 @@ const doc = new Document({
 
         heading2("3.5 服务名称识别"),
         p("SERVICE_NAMES 字典内置 1023 个知名端口号（1-1023 全覆盖）到服务名称的映射，覆盖："),
-        bullet("知名系统端口（0-1023）：HTTP(80)、HTTPS(443)、SSH(22)、FTP(21)、SMTP(25)、DNS(53)、TELNET(23) 等 100+ 个。"),
-        bullet("注册端口（1024-49151）：MySQL(3306)、PostgreSQL(5432)、Redis(6379)、MongoDB(27017)、RDP(3389)、Docker(2375/2376) 等 150+ 个。"),
-        bullet("常见高端口：Splunk(9997)、Webmin(10000)、Memcached(11211)、Minecraft(25565) 等 50+ 个。"),
+        bullet("知名系统端口（1-1023）：全部 1023 个端口全覆盖，包括 HTTP(80)、HTTPS(443)、SSH(22)、FTP(21)、SMTP(25)、DNS(53)、TELNET(23) 等。"),
+        bullet("注册端口（1024-49151）：MySQL(3306)、PostgreSQL(5432)、Redis(6379)、MongoDB(27017)、RDP(3389)、Docker(2375/2376) 等约 150 个。"),
+        bullet("常见高端口：Splunk(9997)、Webmin(10000)、Memcached(11211)、Minecraft(25565) 等约 34 个。"),
         p("get_service_name(port) 通过字典查找返回服务名，未知端口返回 \"unknown\"。"),
 
         heading2("3.6 GUI 界面设计"),
@@ -331,7 +344,7 @@ const doc = new Document({
         bullet("状态标签：open = 荧光绿粗体，up = 青色，filtered = 黄色，error = 红色"),
         bullet("底部进度条 + 状态行（[ READY ] / [ SCANNING ] / [ DONE ]）"),
         p("GUI 扫描在后台 daemon 线程执行，通过 root.after() 跨线程安全更新 UI。扫描结果只显示开放端口（关闭/过滤端口后台保存用于导出）。"),
-        p("启动方式：双击 gui.pyw（Windows 关联 pythonw.exe，无命令行窗口），唯一启动方式。"),
+        p("启动方式：双击 gui.pyw（Windows 关联 pythonw.exe，无命令行窗口），也可 python gui.py 调试运行。"),
 
         heading2("3.7 报告生成"),
         p("ReportGenerator 类生成两种格式报告："),
@@ -366,7 +379,7 @@ const doc = new Document({
         p("采用 unittest 框架，两个测试文件共 25 个测试用例，覆盖以下方面："),
         bullet("IP 解析：单 IP / CIDR / IP 范围 / 域名 / 空输入 / 非法输入 / 反向范围"),
         bullet("端口解析：单端口 / 范围 / 逗号分隔 / 混合 / 越界 / 空输入 / 非法字符"),
-        bullet("服务名查询：已知端口 (80→http, 443→https, 22→ssh) / 未知端口 (65000→unknown)"),
+        bullet("服务名查询：已知端口 (80→http, 443→https, 22→ssh) / 未知端口 (1024→unknown)"),
         bullet("TCP 扫描：localhost 开放端口 / 关闭端口 / 批量扫描 / 配置默认值 / 自定义配置"),
         bullet("ICMP 发现：localhost ping / 无效主机 ping / 网段批量发现"),
 
@@ -388,7 +401,7 @@ const doc = new Document({
         heading2("4.3 功能验证"),
         p("除单元测试外，还进行了以下手动功能验证："),
         bullet("CLI 扫描本地：python cli.py scan --target 127.0.0.1 --ports 1-1024 → 发现 135 端口开放 (msrpc 服务)"),
-        bullet("CLI 发现主机：python cli.py discover --target 127.0.0.1 → 检测到存活主机 1 台"),
+        bullet("CLI 发现主机：python cli.py discover --network 127.0.0.1 → 检测到存活主机 1 台"),
         bullet("GUI 操作：启动 gui.pyw → 输入目标 → 点击 SCAN → 表格实时显示开放端口 → EXPORT 导出报告"),
         bullet("HTML 报告：浏览器打开，格式正确，包含 summary 和 per-host 表格"),
 
@@ -478,11 +491,11 @@ const doc = new Document({
         ]),
         p([
           { text: "HostResult", font: "Consolas", size: 21, bold: true },
-          { text: "（dataclass）：host: str, status: HostStatus, open_ports: list[ScanResult], scan_time: float, error_message: str", font: "Consolas", size: 20 },
+          { text: "（dataclass）：host: str, status: HostStatus, open_ports: list[ScanResult] = [], scan_time: float = 0.0, error_message: str = \"\"", font: "Consolas", size: 20 },
         ]),
         p([
           { text: "ScanConfig", font: "Consolas", size: 21, bold: true },
-          { text: "（dataclass）：targets: list[str], ports: list[int], timeout: float = 1.0, max_workers: int = 100", font: "Consolas", size: 20 },
+          { text: "（dataclass）：targets: list[str] = [], ports: list[int] = [], timeout: float = 1.0, max_workers: int = 100", font: "Consolas", size: 20 },
         ]),
 
         heading2("5.4 主要函数说明"),
@@ -515,7 +528,7 @@ const doc = new Document({
         bullet("扫描在后台 daemon 线程 (threading.Thread) 中执行，不阻塞 GUI 主线程。"),
         bullet("所有 UI 更新通过 root.after(0, callback, ...) 调度到主线程执行。"),
         bullet("daemon=True 确保窗口关闭后后台线程自动终止。"),
-        bullet("ThreadPoolExecutor 的 max_workers 通过 ScanConfig 控制，取 min(用户设置, 端口数, 500)。"),
+        bullet("ThreadPoolExecutor 的 max_workers：TCP 取 min(用户设置, 端口数, 500)，ICMP 取 min(用户设置, 主机数, 100)。"),
 
         // ====== CHAPTER 6 ======
         heading1("六、收获与总结"),
